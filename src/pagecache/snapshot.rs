@@ -1,5 +1,5 @@
 #[cfg(feature = "zstd")]
-use zstd::block::{compress, decompress};
+use zstd::bulk::{compress, decompress};
 
 use crate::*;
 
@@ -184,7 +184,9 @@ impl Snapshot {
                     if pushed {
                         let old = self.pt.pop().unwrap();
                         if old != PageState::Uninitialized {
-                            error!("expected previous page state to be uninitialized");
+                            error!(
+                                "expected previous page state to be uninitialized"
+                            );
                             return Err(Error::corruption(None));
                         }
                     }
@@ -295,9 +297,9 @@ fn advance_snapshot(
         let monotonic = segment_progress >= SEG_HEADER_LEN as Lsn
             || (segment_progress == 0 && iter.segment_base.is_none());
         if !monotonic {
-            error!("expected segment progress {} to be above SEG_HEADER_LEN or == 0, cur_lsn: {}",
-                segment_progress,
-                iterated_lsn,
+            error!(
+                "expected segment progress {} to be above SEG_HEADER_LEN or == 0, cur_lsn: {}",
+                segment_progress, iterated_lsn,
             );
             return Err(Error::corruption(None));
         }
@@ -547,7 +549,7 @@ fn write_snapshot(config: &RunningConfig, snapshot: &Snapshot) -> Result<()> {
 
     // write the snapshot bytes, followed by a crc64 checksum at the end
     io_fail!(config, "snap write");
-    f.write_all(&*bytes)?;
+    f.write_all(&bytes)?;
     io_fail!(config, "snap write len");
     f.write_all(&len_bytes)?;
     io_fail!(config, "snap write crc");
